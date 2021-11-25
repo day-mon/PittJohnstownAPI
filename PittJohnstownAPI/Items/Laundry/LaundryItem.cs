@@ -1,42 +1,26 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
 
-namespace PittJohnstownAPI.Items
+namespace PittJohnstownAPI.Items.Laundry
 {
     public class LaundryItem
     {
-        
-        public string ApplianceID = "0";
-        public string type = "N/A";
-        public bool IsWorking = false;
-        public string TimeRemaining = "N/A";
-        public bool IsInUse = false;
-        public string Location = "N/A";
+        public string ApplianceID { get; set; }
+        public string type { get; set; }
+        public bool IsWorking { get; set; }
+        public string TimeRemaining { get; set; }
+        public bool IsInUse { get; set; }
+        public string Location { get; set; }
 
-
-        public LaundryItem()
-        {
-            
-        }
 
         public LaundryItem(LaundryObject Item, string Location)
         {
-            var ItemType = Item.Type;
-            Debug.WriteLine(ItemType);
-
-            if (!(ItemType.ToUpper().Contains("DRY") || ItemType.Contains("washFL"))) return;
-
             this.type = Item.Type.ToUpper().StartsWith('D') ? "Dryer" : "Washer";
             this.IsWorking = Item.Percentage <= 5;
             this.ApplianceID = Item.ApplianceDesc;
             this.IsInUse = Item.StatusToggle > 0 && IsWorking;
-
-            Debug.WriteLine($"{Item.TimeLeftLite} | {Item.TimeLeftLite} | {Item.TimeRemaining} | {Item.TimeRemaining2}");
-
             this.TimeRemaining = Item.TimeLeftLite;
             this.Location = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(Location);
-
-            Debug.WriteLine($"Called: {this}");
         }
 
 

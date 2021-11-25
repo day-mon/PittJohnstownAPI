@@ -1,6 +1,6 @@
-using Newtonsoft.Json; 
-namespace PittJohnstownAPI.Items{ 
-
+using Newtonsoft.Json;
+namespace PittJohnstownAPI.Items.Laundry
+{
     public class Dimensions
     {
         [JsonProperty("x")]

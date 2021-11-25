@@ -1,7 +1,7 @@
 using Newtonsoft.Json; 
-using System.Collections.Generic; 
-namespace PittJohnstownAPI.Items{ 
-
+using System.Collections.Generic;
+namespace PittJohnstownAPI.Items.Laundry
+{
     public class Root
     {
         [JsonProperty("dimensions")]

@@ -1,6 +1,6 @@
-using Newtonsoft.Json; 
-namespace PittJohnstownAPI.Items{ 
-
+using Newtonsoft.Json;
+namespace PittJohnstownAPI.Items.Laundry
+{
     public class SchoolStyles
     {
         [JsonProperty("school_theme")]

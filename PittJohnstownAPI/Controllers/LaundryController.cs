@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PittJohnstownAPI.Items;
+using PittJohnstownAPI.Items.Laundry;
 using System.Net;
 using System.Diagnostics;
 using Newtonsoft.Json;
@@ -14,7 +14,7 @@ namespace PittJohnstownAPI.Controllers
     [ApiController]
 
 
-    public class LController : ControllerBase
+    public class LaundryController : ControllerBase
     {
 
         private static readonly string BASE_URL = "https://www.laundryview.com/api/currentRoomData?school_desc_key=4590&location=";
@@ -33,19 +33,13 @@ namespace PittJohnstownAPI.Controllers
             ["LARKSPUR"] = "58133911",
             ["LAUREL"] = "5813394",
             ["CPAS"] = "581339013",
-
         };
 
 
 
-        // GET: api/<LController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
+      
 
-        // GET api/<LController>/5
+        // GET api/<LaundryController>/5
         [HttpGet("{Dormatory}")]
         async public Task<List<LaundryItem>> Get(string Dormatory)
         {
@@ -67,36 +61,18 @@ namespace PittJohnstownAPI.Controllers
             var myDeserializedClass = JsonConvert.DeserializeObject<Root>(content);
 
 
-            foreach (var item in myDeserializedClass.LaundryObjects)
-            {
 
-                list.Add(new LaundryItem(item, Dormatory));
-                
+            if (myDeserializedClass == null)
+            {
+                return list;
             }
 
-            return  list;
-        }
 
 
-
-
-
-        // POST api/<LController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<LController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<LController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            return myDeserializedClass.LaundryObjects
+                                 .Where(item => item.Type.ToUpper().Contains("Dry") || item.Type.Contains("washFL"))
+                                 .Select(item => new LaundryItem(item, Dormatory))
+                                 .ToList();
         }
     }
 }

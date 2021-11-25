@@ -1,6 +1,6 @@
-using Newtonsoft.Json; 
-namespace PittJohnstownAPI.Items{ 
-
+using Newtonsoft.Json;
+namespace PittJohnstownAPI.Items.Laundry
+{
     public class LaundryObject
     {
         [JsonProperty("x")]
@@ -25,19 +25,19 @@ namespace PittJohnstownAPI.Items{
         public string Type { get; set; }
 
         [JsonProperty("appliance_type")]
-        public string ApplianceType { get; set; }
+        public string? ApplianceType { get; set; }
 
         [JsonProperty("model_number")]
         public string ModelNumber { get; set; }
 
         [JsonProperty("orientation")]
-        public string Orientation { get; set; }
+        public string? Orientation { get; set; }
 
         [JsonProperty("appliance_desc_key")]
-        public string ApplianceDescKey { get; set; }
+        public string? ApplianceDescKey { get; set; }
 
         [JsonProperty("appliance_desc")]
-        public string ApplianceDesc { get; set; }
+        public string? ApplianceDesc { get; set; }
 
         [JsonProperty("combo")]
         public bool? Combo { get; set; }
@@ -73,16 +73,16 @@ namespace PittJohnstownAPI.Items{
         public int? TimeRemaining2 { get; set; }
 
         [JsonProperty("time_left_lite2")]
-        public string TimeLeftLite2 { get; set; }
+        public string? TimeLeftLite2 { get; set; }
 
         [JsonProperty("percentage2")]
         public double? Percentage2 { get; set; }
 
         [JsonProperty("appliance_desc_key2")]
-        public string ApplianceDescKey2 { get; set; }
+        public string? ApplianceDescKey2 { get; set; }
 
         [JsonProperty("appliance_desc2")]
-        public string ApplianceDesc2 { get; set; }
+        public string? ApplianceDesc2 { get; set; }
     }
 
 }
