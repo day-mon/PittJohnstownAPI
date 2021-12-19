@@ -1,6 +1,7 @@
-using Newtonsoft.Json; 
-using System.Collections.Generic; 
-namespace PittJohnstownAPI.Items.Dining{ 
+using Newtonsoft.Json;
+
+namespace PittJohnstownAPI.Items.Dining
+{
 
     public class Item
     {

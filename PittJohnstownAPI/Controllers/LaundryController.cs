@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PittJohnstownAPI.Items.Laundry;
-using System.Net;
-using System.Diagnostics;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using PittJohnstownAPI.Items.Laundry;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -16,9 +13,9 @@ namespace PittJohnstownAPI.Controllers
 
     public class LaundryController : ControllerBase
     {
-
         private static readonly string BASE_URL = "https://www.laundryview.com/api/currentRoomData?school_desc_key=4590&location=";
-        private readonly Dictionary<string, string> LAUNDRY_API_CALLS = new Dictionary<string, string>
+
+        private readonly Dictionary<string, string> _laundryApiCalls = new()
         {
             ["HICKORY"] = "5813396",
             ["BRIAR"] = "581339005",
@@ -36,23 +33,20 @@ namespace PittJohnstownAPI.Controllers
         };
 
 
-
-      
-
         // GET api/<LaundryController>/5
-        [HttpGet("{Dormatory}")]
-        async public Task<List<LaundryItem>> Get(string Dormatory)
+        [HttpGet("{dormatory}")]
+        public async Task<List<LaundryItem>> Get(string dormatory)
         {
-            var upper = Dormatory.ToUpper().Trim();
+            var upper = dormatory.ToUpper().Trim();
             var list = new List<LaundryItem>();
 
 
-            if (!LAUNDRY_API_CALLS.ContainsKey(upper))
+            if (!_laundryApiCalls.ContainsKey(upper))
             {
                 return list;
             }
 
-            var value = LAUNDRY_API_CALLS[upper];
+            var value = _laundryApiCalls[upper];
 
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "C# console program");
@@ -71,7 +65,7 @@ namespace PittJohnstownAPI.Controllers
 
             return myDeserializedClass.LaundryObjects
                                  .Where(item => item.Type.ToUpper().Contains("Dry") || item.Type.Contains("washFL"))
-                                 .Select(item => new LaundryItem(item, Dormatory))
+                                 .Select(item => new LaundryItem(item, dormatory))
                                  .ToList();
         }
     }

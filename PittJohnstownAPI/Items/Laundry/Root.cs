@@ -1,5 +1,5 @@
-using Newtonsoft.Json; 
-using System.Collections.Generic;
+using Newtonsoft.Json;
+
 namespace PittJohnstownAPI.Items.Laundry
 {
     public class Root
@@ -21,7 +21,6 @@ namespace PittJohnstownAPI.Items.Laundry
 
         [JsonProperty("schoolStyles")]
         public SchoolStyles SchoolStyles { get; set; }
-
     }
 
 }

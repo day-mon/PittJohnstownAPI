@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PittJohnstownAPI.Items.Dining;
-using System.Diagnostics;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -12,74 +12,73 @@ namespace PittJohnstownAPI.Controllers
     [ApiController]
     public class DiningController : ControllerBase
     {
-       
-        [HttpGet("{period}/{DinnigStation}")]
-        async public Task<List<Item>> GetByDiningStation(string DinnigStation, string period)
+        [HttpGet("{period}/{dinigStation}")]
+        public async Task<List<Item>> GetByDiningStation(string dinigStation, string period)
         {
             var jsonObject = await GetDataJsonByPeriod(period);
 
-            if (jsonObject == null) return new List<Item>();
 
+            return jsonObject?
+                .Menu?
+                .Periods?
+                .Categories?
+                .Find(item => item.Name != null && item.Name.Equals(dinigStation, StringComparison.OrdinalIgnoreCase))
+                ?.Items ?? new List<Item>();
+                
 
-            return jsonObject.Menu
-                .Periods
-                .Categories
-                .Find(item => item.Name.ToLower() == DinnigStation.ToLower())
-                .Items;
 
         }
-        // GET api/<DiningController>/5w
+
+        // GET api/<DiningController>/5
         [HttpGet("{period}")]
-        async public Task<List<Category>> GetByPeriod(string period)
+        public async Task<List<Category>> GetByPeriod(string period)
         {
             var jsonObject = await GetDataJsonByPeriod(period);
 
             if (jsonObject == null) return new List<Category>();
 
 
-            return jsonObject.Menu
-                .Periods
-                .Categories;
+            return jsonObject?
+                .Menu?
+                .Periods?
+                .Categories ?? new List<Category>();
         }
 
 
-        async private Task<Root?> GetDataJsonByPeriod(string Period)
+        private async Task<Root?> GetDataJsonByPeriod(string period)
         {
             var handler = WebHandler.GetInstance();
-            var PeriodId = await GetPeriod(Period);
+            var periodId = await GetPeriod(period);
 
-            if (String.IsNullOrEmpty(PeriodId))
+            if (string.IsNullOrEmpty(periodId))
             {
                 return null;
             }
 
-            var BASE_URL = $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods/{PeriodId}?platform=0&date={DateTime.Now.ToString("yyyy-MM-dd")}";
-            var content = await handler.GetWebsiteContent(BASE_URL);
+            var baseUrl = $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods/{periodId}?platform=0&date={DateTime.Now:yyyy-MM-dd}";
+            var content = await WebHandler.GetWebsiteContent(baseUrl);
 
             return JsonConvert.DeserializeObject<Root>(content);
         }
 
 
-        async private Task<string> GetPeriod(string period)
+        private async Task<string> GetPeriod(string period)
         {
-
             var handler = WebHandler.GetInstance();
-            string BASE_URL = $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods?platform=0&date={DateTime.Now.ToString("yyyy-MM-dd")}";
+            var baseUrl = $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods?platform=0&date={DateTime.Now:yyyy-MM-dd}";
 
-            var content = await handler.GetWebsiteContent(BASE_URL);
+            var content = await WebHandler.GetWebsiteContent(baseUrl);
 
             var myDeserializedClass = JsonConvert.DeserializeObject<Root>(content);
-            if (myDeserializedClass == null) return "";
+            if (myDeserializedClass == null) return string.Empty;
 
 
-            foreach (var k in myDeserializedClass.Periods)
+            foreach (var var in myDeserializedClass.Periods.Select(k => k?.Name?.Equals(period, StringComparison.OrdinalIgnoreCase).ToString()))
             {
-                if (k.Name.ToLower() == period.ToLower()) return k.Id;
+                Debug.WriteLine(var);
             }
 
-            return "";
-         
+            return string.Empty;
         }
- 
     }
 }

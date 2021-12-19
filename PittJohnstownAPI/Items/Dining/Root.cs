@@ -1,7 +1,7 @@
-using Newtonsoft.Json; 
-using System.Collections.Generic; 
+﻿using Newtonsoft.Json;
+
 namespace PittJohnstownAPI.Items.Dining
-{ 
+{
     public class Root
     {
         [JsonProperty("status")]
