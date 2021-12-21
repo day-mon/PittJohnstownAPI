@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PittJohnstownAPI.Items.Dining;
 
@@ -12,8 +11,8 @@ namespace PittJohnstownAPI.Controllers
     [ApiController]
     public class DiningController : ControllerBase
     {
-        [HttpGet("{period}/{dinigStation}")]
-        public async Task<List<Item>> GetByDiningStation(string dinigStation, string period)
+        [HttpGet("{period}/{diningStation}")]
+        public async Task<List<Item>> GetByDiningStation(string diningStation, string period)
         {
             var jsonObject = await GetDataJsonByPeriod(period);
 
@@ -22,7 +21,7 @@ namespace PittJohnstownAPI.Controllers
                 .Menu?
                 .Periods?
                 .Categories?
-                .Find(item => item.Name != null && item.Name.Equals(dinigStation, StringComparison.OrdinalIgnoreCase))
+                .Find(item => item.Name != null && item.Name.Equals(diningStation, StringComparison.OrdinalIgnoreCase))
                 ?.Items ?? new List<Item>();
                 
 
@@ -45,7 +44,7 @@ namespace PittJohnstownAPI.Controllers
         }
 
 
-        private async Task<Root?> GetDataJsonByPeriod(string period)
+        private static async Task<Root?> GetDataJsonByPeriod(string period)
         {
             var handler = WebHandler.GetInstance();
             var periodId = await GetPeriod(period);
@@ -62,9 +61,8 @@ namespace PittJohnstownAPI.Controllers
         }
 
 
-        private async Task<string> GetPeriod(string period)
+        private static async Task<string?> GetPeriod(string period)
         {
-            var handler = WebHandler.GetInstance();
             var baseUrl = $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods?platform=0&date={DateTime.Now:yyyy-MM-dd}";
 
             var content = await WebHandler.GetWebsiteContent(baseUrl);
@@ -75,7 +73,7 @@ namespace PittJohnstownAPI.Controllers
 
             foreach (var var in myDeserializedClass.Periods.Select(k => k?.Name?.Equals(period, StringComparison.OrdinalIgnoreCase).ToString()))
             {
-                Debug.WriteLine(var);
+                if (var != null && var.Equals(period, StringComparison.OrdinalIgnoreCase)) return var;
             }
 
             return string.Empty;

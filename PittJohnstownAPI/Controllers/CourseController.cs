@@ -1,8 +1,8 @@
-﻿using System.Diagnostics;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 using PittJohnstownAPI.Items.Course;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -16,7 +16,6 @@ namespace PittJohnstownAPI.Controllers
         [HttpGet("{periodId}/{courseId}")]
         public async Task<Course> GetCourseByCourseId(int periodId, int courseId)
         {
-
             var handler = WebHandler.GetInstance();
             var redirects = await handler.CheckRedirects("https://psmobile.pitt.edu/app/catalog/classSearch/");
 
@@ -24,7 +23,6 @@ namespace PittJohnstownAPI.Controllers
 
             if (redirects)
             {
-                Debug.WriteLine("test");
                 return new Course();
             }
 
@@ -32,40 +30,40 @@ namespace PittJohnstownAPI.Controllers
 
             if (!period)
             {
-                Debug.WriteLine("test2");
                 return new Course();
             }
 
             var url = $"https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{periodId}/{courseId}";
             var content = await WebHandler.GetWebsiteContent(url);
-            return GetCourseFromHtml(content);;
+            return GetCourseFromHtml(content);
+            ;
         }
 
-        private bool ValidateCourseId(int CourseId)
-        {
-            return true;
-        }
 
         private static Course GetCourseFromHtml(string content)
         {
             var course = new Course();
             var html = new HtmlDocument();
             html.LoadHtml(content);
-
             var all = GetElementsByClassName(html, "section-content clearfix");
-            var identifier = GetElementsByClassName(html, "page-title  with-back-btn")
+            var identifier = GetElementsByClassNameWithAllNames(html, "page-title  with-back-btn")
                 .FirstOrDefault()?
                 .InnerText ?? "";
 
+            course.Identifier = identifier;
+
+            Console.WriteLine(identifier);
+
             var elementsLeft = GetElementsByClassName(html, "pull-left");
-            var elementsRight = GetElementsByClassName(html ,"pull-right");
+            var elementsRight = GetElementsByClassName(html, "pull-right");
+
+
             var elementsRightSize = elementsLeft.Count;
 
             // TODO: Meeting Dates
-            
+
             for (int left = 0, right = 0; right < elementsRightSize; left++, right++)
             {
-          
                 // Text on left side of class page (i.e Description, Class Times, etc);
                 var textLeft = elementsLeft[left].InnerText.Trim();
                 // Text on right side of class page (i.e actual data)
@@ -108,10 +106,14 @@ namespace PittJohnstownAPI.Controllers
                     case "Drop Consent":
                         course.DropConsent = textRight;
                         break;
+                    case "Enrollment Requirements":
+                        course.EnrollmentRequirements = textRight;
+                        break;
                     case "Instructor(s)":
                         course.Instructors = textRight.Split(',').ToList();
                         break;
                     case "Meets":
+                        course.MeetingDays = ParseDayOfWeeks(textRight);
                         break;
                     case "Meeting Dates":
                         break;
@@ -125,7 +127,7 @@ namespace PittJohnstownAPI.Controllers
                         course.Campus = textRight;
                         break;
                     case "Components":
-                        course.Componenets = textRight;
+                        course.Components = textRight;
                         break;
                     case "Status":
                         course.Status = textRight;
@@ -137,7 +139,7 @@ namespace PittJohnstownAPI.Controllers
                         course.SeatsOpen = int.Parse(textRight);
                         break;
                     case "Class Capacity":
-                        course.ClassCapacaity = int.Parse(textRight);
+                        course.ClassCapacity = int.Parse(textRight);
                         break;
                     case "Unrestricted Seats":
                         course.UnrestrictedSeats = int.Parse(textRight);
@@ -154,13 +156,12 @@ namespace PittJohnstownAPI.Controllers
                 }
             }
             
-            // Will finish tomorrow
-
+            
             return course;
         }
 
 
-        private static List<HtmlNode> GetElementsByClassName(HtmlDocument doc, String className)
+        private static List<HtmlNode> GetElementsByClassName(HtmlDocument doc, string className)
         {
             var regex = new Regex("\\b" + Regex.Escape(className) + "\\b", RegexOptions.Compiled);
 
@@ -171,18 +172,44 @@ namespace PittJohnstownAPI.Controllers
                 .ToList();
         }
 
+        private static IEnumerable<HtmlNode> GetElementsByClassNameWithAllNames(HtmlDocument doc, string className)
+        {
+            var regex = new Regex("\\b" + Regex.Escape(className) + "\\b", RegexOptions.Compiled);
+
+            return doc.DocumentNode
+                .Descendants()
+                .Where(n => n.NodeType == HtmlNodeType.Element)
+                .Where(e => regex.IsMatch(e.GetAttributeValue("class", "")))
+                .ToList();
+        }
+
+        private static List<string> ParseDayOfWeeks(string? days)
+        {
+            if (string.IsNullOrWhiteSpace(days)) return new List<string>();
+
+            var dayOfWeeks = new Dictionary<string, DayOfWeek>
+            {
+                ["Mo"] = DayOfWeek.Monday,
+                ["Tu"] = DayOfWeek.Tuesday,
+                ["We"] = DayOfWeek.Wednesday,
+                ["Th"] = DayOfWeek.Thursday,
+                ["Thr"] = DayOfWeek.Thursday,
+                ["Fr"] = DayOfWeek.Friday,
+                ["Fri"] = DayOfWeek.Friday
+            };
+
+            //split on upper case
+            var splitStr = Regex.Split(days, "\\s+");
+            var daysStr = Regex.Split(splitStr[0], @"(?<!^)(?=[A-Z])");
+            return daysStr.Length == 0
+                ? new List<string>()
+                : (from day in daysStr where dayOfWeeks.ContainsKey(day) select dayOfWeeks[day].ToString()).ToList();
+        }
+
 
         private static bool IsValidTerm(int PeriodId)
         {
-            var periodStr = PeriodId.ToString();
-
-            if (periodStr.Length != 4) return false;
-            if (periodStr[0] != '2') return false;
-
-            var SeasonNum = int.Parse(periodStr[3].ToString());
-            // pretty you can just do var SeasonNum = PeriodStr[3]
-
-            return !(SeasonNum != 4 && SeasonNum != 1 && SeasonNum != 7);
+            return Regex.IsMatch(PeriodId.ToString(), "2\\d\\d[147]");
         }
     }
 }

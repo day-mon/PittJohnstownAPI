@@ -13,7 +13,7 @@ namespace PittJohnstownAPI.Controllers
 
     public class LaundryController : ControllerBase
     {
-        private static readonly string BASE_URL = "https://www.laundryview.com/api/currentRoomData?school_desc_key=4590&location=";
+        private const string BaseUrl = "https://www.laundryview.com/api/currentRoomData?school_desc_key=4590&location=";
 
         private readonly Dictionary<string, string> _laundryApiCalls = new()
         {
@@ -35,10 +35,10 @@ namespace PittJohnstownAPI.Controllers
 
         // GET api/<LaundryController>/5
         [HttpGet("{dormatory}")]
-        public async Task<List<LaundryItem>> Get(string dormatory)
+        public async Task<List<LaundryModel>> Get(string dormatory)
         {
             var upper = dormatory.ToUpper().Trim();
-            var list = new List<LaundryItem>();
+            var list = new List<LaundryModel>();
 
 
             if (!_laundryApiCalls.ContainsKey(upper))
@@ -51,7 +51,7 @@ namespace PittJohnstownAPI.Controllers
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "C# console program");
 
-            var content = await client.GetStringAsync($"{BASE_URL}{value}");
+            var content = await client.GetStringAsync($"{BaseUrl}{value}");
             var myDeserializedClass = JsonConvert.DeserializeObject<Root>(content);
 
 
@@ -65,7 +65,7 @@ namespace PittJohnstownAPI.Controllers
 
             return myDeserializedClass.LaundryObjects
                                  .Where(item => item.Type.ToUpper().Contains("Dry") || item.Type.Contains("washFL"))
-                                 .Select(item => new LaundryItem(item, dormatory))
+                                 .Select(item => new LaundryModel(item, dormatory))
                                  .ToList();
         }
     }

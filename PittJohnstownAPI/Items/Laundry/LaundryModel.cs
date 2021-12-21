@@ -1,19 +1,10 @@
 ﻿using Newtonsoft.Json;
-using System.Diagnostics;
 
 namespace PittJohnstownAPI.Items.Laundry
 {
-    public class LaundryItem
+    public class LaundryModel
     {
-        public string ApplianceID { get; set; }
-        public string type { get; set; }
-        public bool IsWorking { get; set; }
-        public string TimeRemaining { get; set; }
-        public bool IsInUse { get; set; }
-        public string Location { get; set; }
-
-
-        public LaundryItem(LaundryObject Item, string Location)
+        public LaundryModel(LaundryObject Item, string Location)
         {
             this.type = Item.Type.ToUpper().StartsWith('D') ? "Dryer" : "Washer";
             this.IsWorking = Item.Percentage <= 5;
@@ -23,6 +14,12 @@ namespace PittJohnstownAPI.Items.Laundry
             this.Location = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(Location);
         }
 
+        public string ApplianceID { get; set; }
+        public string type { get; set; }
+        public bool IsWorking { get; set; }
+        public string TimeRemaining { get; set; }
+        public bool IsInUse { get; set; }
+        public string Location { get; set; }
 
 
         public override string ToString()
