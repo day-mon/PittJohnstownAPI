@@ -14,7 +14,7 @@ namespace PittJohnstownAPI.Controllers
     {
         // GET api/<CourseController>/5
         [HttpGet("{periodId}/{courseId}")]
-        public async Task<Course> GetCourseByCourseId(int periodId, int courseId)
+        public async Task<CourseModel> GetCourseByCourseId(int periodId, int courseId)
         {
             var handler = WebHandler.GetInstance();
             var redirects = await handler.CheckRedirects("https://psmobile.pitt.edu/app/catalog/classSearch/");
@@ -23,14 +23,14 @@ namespace PittJohnstownAPI.Controllers
 
             if (redirects)
             {
-                return new Course();
+                return new CourseModel();
             }
 
             var period = IsValidTerm(periodId);
 
             if (!period)
             {
-                return new Course();
+                return new CourseModel();
             }
 
             var url = $"https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{periodId}/{courseId}";
@@ -40,9 +40,9 @@ namespace PittJohnstownAPI.Controllers
         }
 
 
-        private static Course GetCourseFromHtml(string content)
+        private static CourseModel GetCourseFromHtml(string content)
         {
-            var course = new Course();
+            var course = new CourseModel();
             var html = new HtmlDocument();
             html.LoadHtml(content);
             var all = GetElementsByClassName(html, "section-content clearfix");
