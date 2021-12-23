@@ -17,7 +17,7 @@ namespace PittJohnstownAPI.Controllers
         public async Task<CourseModel> GetCourseByCourseId(int periodId, int courseId)
         {
             var handler = WebHandler.GetInstance();
-            var redirects = await handler.CheckRedirects("https://psmobile.pitt.edu/app/catalog/classSearch/");
+            var redirects = await WebHandler.CheckRedirects("https://psmobile.pitt.edu/app/catalog/classSearch/");
 
             //https://psmobile.pitt.edu/app/catalog/classSearch
 
@@ -36,7 +36,6 @@ namespace PittJohnstownAPI.Controllers
             var url = $"https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{periodId}/{courseId}";
             var content = await WebHandler.GetWebsiteContent(url);
             return GetCourseFromHtml(content);
-            ;
         }
 
 
@@ -46,7 +45,7 @@ namespace PittJohnstownAPI.Controllers
             var html = new HtmlDocument();
             html.LoadHtml(content);
             var all = GetElementsByClassName(html, "section-content clearfix");
-            var identifier = GetElementsByClassNameWithAllNames(html, "page-title  with-back-btn")
+            var identifier = GetElementsByClassName(html, "page-title  with-back-btn", false)
                 .FirstOrDefault()?
                 .InnerText ?? "";
 
@@ -114,6 +113,10 @@ namespace PittJohnstownAPI.Controllers
                         break;
                     case "Meets":
                         course.MeetingDays = ParseDayOfWeeks(textRight);
+                        // returns start date if value is null 
+                        course.StartDate = ParseClassTime(textRight, course) ?? course.StartDate;
+                        course.EndDate = ParseClassTime(textRight, course, 2) ?? course.EndDate;
+
                         break;
                     case "Meeting Dates":
                         break;
@@ -155,37 +158,31 @@ namespace PittJohnstownAPI.Controllers
                         break;
                 }
             }
-            
-            
+
+
             return course;
         }
 
 
-        private static List<HtmlNode> GetElementsByClassName(HtmlDocument doc, string className)
+        private static List<HtmlNode> GetElementsByClassName(HtmlDocument doc, string className,
+            bool ignoreAllButDivs = true)
         {
             var regex = new Regex("\\b" + Regex.Escape(className) + "\\b", RegexOptions.Compiled);
 
             return doc.DocumentNode
                 .Descendants()
                 .Where(n => n.NodeType == HtmlNodeType.Element)
-                .Where(e => e.Name == "div" && regex.IsMatch(e.GetAttributeValue("class", "")))
+                .Where(e => ignoreAllButDivs
+                    ? e.Name == "div" && regex.IsMatch(e.GetAttributeValue("class", ""))
+                    : regex.IsMatch(e.GetAttributeValue("class", "")))
                 .ToList();
         }
 
-        private static IEnumerable<HtmlNode> GetElementsByClassNameWithAllNames(HtmlDocument doc, string className)
-        {
-            var regex = new Regex("\\b" + Regex.Escape(className) + "\\b", RegexOptions.Compiled);
-
-            return doc.DocumentNode
-                .Descendants()
-                .Where(n => n.NodeType == HtmlNodeType.Element)
-                .Where(e => regex.IsMatch(e.GetAttributeValue("class", "")))
-                .ToList();
-        }
 
         private static List<string> ParseDayOfWeeks(string? days)
         {
             if (string.IsNullOrWhiteSpace(days)) return new List<string>();
+            if (days.Equals("TBA")) return new List<string> {"TBA"};
 
             var dayOfWeeks = new Dictionary<string, DayOfWeek>
             {
@@ -204,6 +201,128 @@ namespace PittJohnstownAPI.Controllers
             return daysStr.Length == 0
                 ? new List<string>()
                 : (from day in daysStr where dayOfWeeks.ContainsKey(day) select dayOfWeeks[day].ToString()).ToList();
+        }
+
+        private static DateTime? ParseClassTime(string? days, CourseModel course, int type = 1)
+        {
+            if (days is null or "TBA") return null;
+            var splitStr = Regex.Split(days, "\\s+");
+
+
+            var start = splitStr[1];
+            var end = splitStr[3];
+
+            switch (type)
+            {
+                case 1 when start.Contains("AM"):
+                {
+                    var time = start.Split("AM");
+                    var clock = time[0].Split(":");
+
+                    var houseParsed = int.TryParse(clock[0], out var hour);
+                    var minuteParsed = int.TryParse(clock[1], out var minute);
+
+                    if (!houseParsed)
+                    {
+                        return null;
+                    }
+
+                    var c = course.StartDate;
+
+                    if (minuteParsed) return new DateTime(c.Year, c.Month, c.Day, hour, minute, 0);
+                    return null;
+                }
+                case 1 when start.Contains("PM"):
+                {
+                    var time = start.Split("PM");
+                    var clock = time[0].Split(":");
+
+                    var houseParsed = int.TryParse(clock[0], out var hour);
+
+
+                    if (!houseParsed)
+                    {
+                        return null;
+                    }
+
+                    var min = 0;
+
+                    if (!clock[1].Equals("00", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var minuteParsed = int.TryParse(clock[1], out var minute);
+
+                        min = minute;
+                        if (!minuteParsed)
+                        {
+                            return null;
+                        }
+                    }
+
+                    if (hour != 12)
+                    {
+                        hour += 12;
+                    }
+
+                    var c = course.StartDate;
+
+                    return new DateTime(c.Year, c.Month, c.Day, hour, min, 0);
+                }
+                case 2 when end.Contains("AM"):
+                {
+                    var time = end.Split("AM");
+                    var clock = time[0].Split(":");
+
+                    var houseParsed = int.TryParse(clock[0], out var hour);
+                    var minuteParsed = int.TryParse(clock[1], out var minute);
+
+                    if (!houseParsed)
+                    {
+                        return null;
+                    }
+
+                    var c = course.EndDate;
+
+
+                    if (minuteParsed) return new DateTime(c.Year, c.Month, c.Day, hour, minute, 0);
+                    return null;
+                }
+                case 2 when end.Contains("PM"):
+                {
+                    var time = end.Split("PM");
+                    var clock = time[0].Split(":");
+                    var houseParsed = int.TryParse(clock[0], out var hour);
+
+
+                    if (!houseParsed)
+                    {
+                        return null;
+                    }
+
+                    var min = 0;
+
+                    if (!clock[1].Equals("00", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var minuteParsed = int.TryParse(clock[1], out var minute);
+
+                        min = minute;
+                        if (!minuteParsed)
+                        {
+                            return null;
+                        }
+                    }
+
+                    if (hour != 12)
+                    {
+                        hour += 12;
+                    }
+
+                    var c = course.EndDate;
+
+                    return new DateTime(c.Year, c.Month, c.Day, hour, min, 0);
+                }
+                default:
+                    return null;
+            }
         }
 
 
