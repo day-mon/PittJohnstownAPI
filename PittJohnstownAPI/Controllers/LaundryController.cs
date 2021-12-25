@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using PittJohnstownAPI.Items.Laundry;
+using PittJohnstownAPI.Models.Laundry;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -34,10 +34,10 @@ namespace PittJohnstownAPI.Controllers
 
 
         // GET api/<LaundryController>/5
-        [HttpGet("{dormatory}")]
-        public async Task<List<LaundryModel>> Get(string dormatory)
+        [HttpGet("{dormitory}")]
+        public async Task<List<LaundryModel>> Get(string dormitory)
         {
-            var upper = dormatory.ToUpper().Trim();
+            var upper = dormitory.ToUpper().Trim();
             var list = new List<LaundryModel>();
 
 
@@ -60,12 +60,10 @@ namespace PittJohnstownAPI.Controllers
             {
                 return list;
             }
-
-
-
+            
             return myDeserializedClass.LaundryObjects
                                  .Where(item => item.Type.ToUpper().Contains("Dry") || item.Type.Contains("washFL"))
-                                 .Select(item => new LaundryModel(item, dormatory))
+                                 .Select(item => new LaundryModel(item, dormitory))
                                  .ToList();
         }
     }

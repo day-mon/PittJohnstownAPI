@@ -1,82 +1,137 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using PittJohnstownAPI.Items.Dining;
+using PittJohnstownAPI.Models.Dining;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace PittJohnstownAPI.Controllers
 {
-
-    [Route("api/[controller]")]
+    [Route("api/[controller]/{period}")]
     [ApiController]
     public class DiningController : ControllerBase
     {
-        [HttpGet("{period}/{diningStation}")]
-        public async Task<List<Item>> GetByDiningStation(string diningStation, string period)
+        [HttpGet("{diningStation}")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(List<FoodModel>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<FoodModel>>> GetByDiningStation(string diningStation, string period)
         {
-            var jsonObject = await GetDataJsonByPeriod(period);
+            if (!(period.Equals("breakfast", StringComparison.OrdinalIgnoreCase) ||
+                  period.Equals("lunch", StringComparison.OrdinalIgnoreCase) ||
+                  period.Equals("dinner", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(period)))
+            {
+                return UnprocessableEntity(
+                    $"{period} is a incorrect Period. Please try a correct one such as Breakfast, Lunch, or Dinner");
+            }
+
+            var (error, _, response) = await GetDataJsonByPeriod(period);
+
+            if (response == null)
+            {
+                return EvaluateErrors(error);
+            }
 
 
-            return jsonObject?
-                .Menu?
+            return response
+                .Menu
                 .Periods?
-                .Categories?
+                .Categories
                 .Find(item => item.Name != null && item.Name.Equals(diningStation, StringComparison.OrdinalIgnoreCase))
-                ?.Items ?? new List<Item>();
-                
-
-
+                ?.Items ?? new List<FoodModel>();
         }
 
         // GET api/<DiningController>/5
-        [HttpGet("{period}")]
-        public async Task<List<Category>> GetByPeriod(string period)
+        [HttpGet]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+
+        [ProducesResponseType(typeof(List<FoodModel>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<Category>>> GetByPeriod(string period)
         {
-            var jsonObject = await GetDataJsonByPeriod(period);
+            var (error, _, root) = await GetDataJsonByPeriod(period);
 
-            if (jsonObject == null) return new List<Category>();
+            
+            
+            if (root == null) return EvaluateErrors(error);
 
 
-            return jsonObject?
-                .Menu?
+            return root?
+                .Menu
                 .Periods?
                 .Categories ?? new List<Category>();
         }
 
 
-        private static async Task<Root?> GetDataJsonByPeriod(string period)
+        private static async Task<FunctionResponse> GetDataJsonByPeriod(string period)
         {
-            var handler = WebHandler.GetInstance();
-            var periodId = await GetPeriod(period);
+            var periodFunctionResponse = await GetPeriod(period);
 
-            if (string.IsNullOrEmpty(periodId))
+            if (periodFunctionResponse.Period == string.Empty)
             {
-                return null;
+                return periodFunctionResponse;
             }
 
-            var baseUrl = $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods/{periodId}?platform=0&date={DateTime.Now:yyyy-MM-dd}";
+
+            var baseUrl =
+                $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods/{periodFunctionResponse}?platform=0&date={DateTime.Now:yyyy-MM-dd}";
             var content = await WebHandler.GetWebsiteContent(baseUrl);
 
-            return JsonConvert.DeserializeObject<Root>(content);
+            return string.IsNullOrEmpty(content)
+                ? new FunctionResponse("Something went wrong when attempting to read response.", string.Empty, null)
+                : new FunctionResponse(string.Empty, string.Empty, JsonConvert.DeserializeObject<DiningModel>(content));
         }
 
 
-        private static async Task<string?> GetPeriod(string period)
+        private static async Task<FunctionResponse> GetPeriod(string period)
         {
-            var baseUrl = $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods?platform=0&date={DateTime.Now:yyyy-MM-dd}";
+            var baseUrl =
+                $"https://api.dineoncampus.com/v1/location/5f3c3313a38afc0ed9478518/periods?platform=0&date={DateTime.Now:yyyy-MM-dd}";
 
             var content = await WebHandler.GetWebsiteContent(baseUrl);
-
-            var myDeserializedClass = JsonConvert.DeserializeObject<Root>(content);
-            if (myDeserializedClass == null) return string.Empty;
-
-
-            foreach (var var in myDeserializedClass.Periods.Select(k => k?.Name?.Equals(period, StringComparison.OrdinalIgnoreCase).ToString()))
+            
+            if (content.Equals( @"{""status"":""error"",""msg"":""No menu""}", StringComparison.OrdinalIgnoreCase))
             {
-                if (var != null && var.Equals(period, StringComparison.OrdinalIgnoreCase)) return var;
+                return new FunctionResponse("No menu available for today's date!", string.Empty, null);
+            }
+            
+            if (content == string.Empty)
+            {
+                return new FunctionResponse("Something went wrong when attempting to read response.", string.Empty,
+                    null);
             }
 
-            return string.Empty;
+            var myDeserializedClass = JsonConvert.DeserializeObject<DiningModel>(content);
+            if (myDeserializedClass == null)
+                return new FunctionResponse("Could not deserialize response.", string.Empty, null);
+
+
+            foreach (var var in myDeserializedClass.Periods.Select(k =>
+                         k.Name?.Equals(period, StringComparison.OrdinalIgnoreCase).ToString()))
+            {
+                if (var != null && var.Equals(period, StringComparison.OrdinalIgnoreCase))
+                    return new FunctionResponse(string.Empty, var, null);
+            }
+
+            return new FunctionResponse("Could not find period.", string.Empty, null);
         }
+
+
+
+        private ActionResult EvaluateErrors(string error)
+        {
+            return error switch
+            {
+                "Something went wrong when attempting to read response." => Unauthorized($"{error} Could not connect to external url"),
+                "Could not deserialize response" => UnprocessableEntity(error),
+                "Could not find period." => UnprocessableEntity(error),
+                "No menu available for today's date!" => NotFound(error),
+                _ => BadRequest("Unknown error occured")
+            };
+        }
+        private record FunctionResponse(string Error, string Period, DiningModel? Root);
     }
 }

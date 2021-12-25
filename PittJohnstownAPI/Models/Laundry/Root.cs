@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
+using PittJohnstownAPI.Items.Laundry;
 
-namespace PittJohnstownAPI.Items.Laundry
+namespace PittJohnstownAPI.Models.Laundry
 {
     public class Root
     {

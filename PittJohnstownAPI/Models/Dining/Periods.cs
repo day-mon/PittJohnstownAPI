@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace PittJohnstownAPI.Items.Dining
+namespace PittJohnstownAPI.Models.Dining
 {
 
     public class Periods
@@ -15,7 +15,7 @@ namespace PittJohnstownAPI.Items.Dining
         public int SortOrder { get; set; }
 
         [JsonProperty("categories")]
-        public List<Category> Categories { get; } = new List<Category>();
+        public List<Category> Categories { get; } = new();
     }
 
 }

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace PittJohnstownAPI.Items.Dining
+namespace PittJohnstownAPI.Models.Dining
 {
 
     public class Filter

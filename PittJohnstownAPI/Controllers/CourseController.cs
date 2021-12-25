@@ -1,7 +1,8 @@
 ﻿using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
-using PittJohnstownAPI.Items.Course;
+using NLog;
+using PittJohnstownAPI.Models.Course;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -12,25 +13,39 @@ namespace PittJohnstownAPI.Controllers
     [ApiController]
     public class CourseController : ControllerBase
     {
-        // GET api/<CourseController>/5
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        /* 
+         * Params:
+         * 1. periodId => Period Id defines which semester in which the course takes place
+         * 2. courseId => Course Id defines the course
+         * 
+         * Returns a Unauthorized Error due to Peoplesoft being down
+         * Returns a UnprocessableEntity error if PeriodId is not passed through or not valid
+         * Returns CourseModel otherwise
+         */
         [HttpGet("{periodId}/{courseId}")]
-        public async Task<CourseModel> GetCourseByCourseId(int periodId, int courseId)
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(CourseModel), StatusCodes.Status200OK)]
+        public async Task<ActionResult<CourseModel>> GetCourseByCourseId(int periodId, int courseId)
         {
-            var handler = WebHandler.GetInstance();
             var redirects = await WebHandler.CheckRedirects("https://psmobile.pitt.edu/app/catalog/classSearch/");
 
             //https://psmobile.pitt.edu/app/catalog/classSearch
 
             if (redirects)
             {
-                return new CourseModel();
+                Logger.Error("Peoplesoft is down, Returning unauthorized (401)");
+                return Unauthorized("Peoplesoft is currently down, We are unable to get any data!");
             }
 
             var period = IsValidTerm(periodId);
 
             if (!period)
             {
-                return new CourseModel();
+                Logger.Error($"{period} is not a valid period id, Returning UnprocessableEntity (422)");
+                return UnprocessableEntity($"{periodId} is a incorrect Period ID. Please try a correct one!");
             }
 
             var url = $"https://psmobile.pitt.edu/app/catalog/classsection/UPITT/{periodId}/{courseId}";
@@ -44,22 +59,21 @@ namespace PittJohnstownAPI.Controllers
             var course = new CourseModel();
             var html = new HtmlDocument();
             html.LoadHtml(content);
-            var all = GetElementsByClassName(html, "section-content clearfix");
+            
             var identifier = GetElementsByClassName(html, "page-title  with-back-btn", false)
                 .FirstOrDefault()?
                 .InnerText ?? "";
 
             course.Identifier = identifier;
 
-            Console.WriteLine(identifier);
-
+            
+            
             var elementsLeft = GetElementsByClassName(html, "pull-left");
             var elementsRight = GetElementsByClassName(html, "pull-right");
 
 
             var elementsRightSize = elementsLeft.Count;
 
-            // TODO: Meeting Dates
 
             for (int left = 0, right = 0; right < elementsRightSize; left++, right++)
             {
@@ -181,7 +195,12 @@ namespace PittJohnstownAPI.Controllers
 
         private static List<string> ParseDayOfWeeks(string? days)
         {
-            if (string.IsNullOrWhiteSpace(days)) return new List<string>();
+            if (string.IsNullOrWhiteSpace(days))
+            {
+                Logger.Warn("Days is null on L203");
+                return new List<string>();
+            }
+
             if (days.Equals("TBA")) return new List<string> {"TBA"};
 
             var dayOfWeeks = new Dictionary<string, DayOfWeek>
@@ -224,12 +243,14 @@ namespace PittJohnstownAPI.Controllers
 
                     if (!houseParsed)
                     {
+                        Logger.Error($"Unnatural error, Could not parse hour. \n Value:  {clock[0]}");
                         return null;
                     }
 
                     var c = course.StartDate;
 
                     if (minuteParsed) return new DateTime(c.Year, c.Month, c.Day, hour, minute, 0);
+                    Logger.Error($"Unnatural error, Could not parse minutes. \n Value:  {clock[1]}");
                     return null;
                 }
                 case 1 when start.Contains("PM"):
@@ -242,6 +263,7 @@ namespace PittJohnstownAPI.Controllers
 
                     if (!houseParsed)
                     {
+                        Logger.Error($"Unnatural error, Could not parse hour. \n Value:  {clock[0]}");
                         return null;
                     }
 
@@ -254,6 +276,7 @@ namespace PittJohnstownAPI.Controllers
                         min = minute;
                         if (!minuteParsed)
                         {
+                            Logger.Error($"Unnatural error, Could not parse hour. \n Value:  {clock[1]}");
                             return null;
                         }
                     }
@@ -277,6 +300,7 @@ namespace PittJohnstownAPI.Controllers
 
                     if (!houseParsed)
                     {
+                        Logger.Error($"Unnatural error, Could not parse hour. \n Value:  {clock[0]}");
                         return null;
                     }
 
@@ -284,6 +308,7 @@ namespace PittJohnstownAPI.Controllers
 
 
                     if (minuteParsed) return new DateTime(c.Year, c.Month, c.Day, hour, minute, 0);
+                    Logger.Error($"Unnatural error, Could not parse minutes. \n Value:  {clock[1]}");
                     return null;
                 }
                 case 2 when end.Contains("PM"):
@@ -326,9 +351,9 @@ namespace PittJohnstownAPI.Controllers
         }
 
 
-        private static bool IsValidTerm(int PeriodId)
+        private static bool IsValidTerm(int periodId)
         {
-            return Regex.IsMatch(PeriodId.ToString(), "2\\d\\d[147]");
+            return Regex.IsMatch(periodId.ToString(), "2\\d\\d[147]");
         }
     }
 }

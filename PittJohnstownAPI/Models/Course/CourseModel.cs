@@ -1,4 +1,4 @@
-﻿namespace PittJohnstownAPI.Items.Course
+﻿namespace PittJohnstownAPI.Models.Course
 {
     public class CourseModel
     {

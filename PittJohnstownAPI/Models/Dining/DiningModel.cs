@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace PittJohnstownAPI.Items.Dining
+namespace PittJohnstownAPI.Models.Dining
 {
-    public class Root
+    public class DiningModel
     {
         [JsonProperty("status")]
         public string Status { get; set; }
@@ -20,7 +20,7 @@ namespace PittJohnstownAPI.Items.Dining
         public Menu Menu { get; set; }
 
         [JsonProperty("periods")]
-        public List<Periods> Periods { get; } = new List<Periods>();
+        public List<Periods> Periods { get; } = new();
 
         [JsonProperty("closed")]
         public bool Closed { get; set; }

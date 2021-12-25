@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace PittJohnstownAPI.Items.Laundry
+namespace PittJohnstownAPI.Models.Laundry
 {
     public class LaundryModel
     {

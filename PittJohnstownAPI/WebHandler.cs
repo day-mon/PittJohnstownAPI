@@ -1,13 +1,14 @@
 ﻿using System.Net;
+using NLog;
 
 namespace PittJohnstownAPI
 {
     public class WebHandler
     {
-        private static volatile WebHandler _handler;
+        private static volatile WebHandler _handler = null!;
         private static readonly object LockObject = new();
-        private static readonly HttpClient client = new();
-
+        private static readonly HttpClient Client = new();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private WebHandler()
         {
@@ -31,8 +32,16 @@ namespace PittJohnstownAPI
 
         public static async Task<string> GetWebsiteContent(string url)
         {
-            var content = await client.GetStringAsync(url);
-            return content;
+            try
+            {
+                var content = await Client.GetStringAsync(url);
+                return content;
+            }
+            catch (Exception exception)
+            {
+                Logger.Error($"Exception has occured, Base message {exception.Message} \n\n StackTrace: {exception.StackTrace}");
+                return string.Empty;
+            }
         }
 
         public static async Task<bool> CheckRedirects(string url)

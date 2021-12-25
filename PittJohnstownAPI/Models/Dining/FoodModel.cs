@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 
-namespace PittJohnstownAPI.Items.Dining
+namespace PittJohnstownAPI.Models.Dining
 {
 
-    public class Item
+    public class FoodModel
     {
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -39,13 +39,13 @@ namespace PittJohnstownAPI.Items.Dining
         public string Ingredients { get; set; }
 
         [JsonProperty("nutrients")]
-        public List<Nutrient> Nutrients { get; } = new List<Nutrient>();
+        public List<Nutrient> Nutrients { get; } = new();
 
         [JsonProperty("filters")]
-        public List<Filter> Filters { get; } = new List<Filter>();
+        public List<Filter> Filters { get; } = new();
 
         [JsonProperty("custom_allergens")]
-        public List<object> CustomAllergens { get; } = new List<object>();
+        public List<object> CustomAllergens { get; } = new();
 
         [JsonProperty("calories")]
         public int Calories { get; set; }
