@@ -9,12 +9,9 @@ namespace PittJohnstownAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
-
     public class LaundryController : ControllerBase
     {
         private const string BaseUrl = "https://www.laundryview.com/api/currentRoomData?school_desc_key=4590&location=";
-
         private readonly Dictionary<string, string> _laundryApiCalls = new()
         {
             ["HICKORY"] = "5813396",
@@ -35,36 +32,43 @@ namespace PittJohnstownAPI.Controllers
 
         // GET api/<LaundryController>/5
         [HttpGet("{dormitory}")]
-        public async Task<List<LaundryModel>> Get(string dormitory)
+        public async Task<ActionResult<IEnumerable<LaundryModel>>> Get(string dormitory)
         {
             var upper = dormitory.ToUpper().Trim();
-            var list = new List<LaundryModel>();
 
 
             if (!_laundryApiCalls.ContainsKey(upper))
             {
-                return list;
+                return NotFound($"{dormitory} was not found at the University of Pittsburgh @ Johnstown");
             }
 
             var value = _laundryApiCalls[upper];
 
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "C# console program");
 
-            var content = await client.GetStringAsync($"{BaseUrl}{value}");
+            var content = await WebHandler.GetWebsiteContent($"{BaseUrl}{value}");
+
+            if (string.IsNullOrEmpty(content))
+            {
+                return FailedDependency("Exception was caught while attempting to connect to internal api");
+            }
+
             var myDeserializedClass = JsonConvert.DeserializeObject<Root>(content);
-
 
 
             if (myDeserializedClass == null)
             {
-                return list;
+                return FailedDependency(
+                    "Error occured while trying to deserialize a internal api response.");
             }
-            
-            return myDeserializedClass.LaundryObjects
-                                 .Where(item => item.Type.ToUpper().Contains("Dry") || item.Type.Contains("washFL"))
-                                 .Select(item => new LaundryModel(item, dormitory))
-                                 .ToList();
+
+            return new ActionResult<IEnumerable<LaundryModel>>(myDeserializedClass.LaundryObjects
+                .Where(item => item.Type.ToUpper().Contains("Dry") || item.Type.Contains("washFL"))
+                .Select(item => new LaundryModel(item, dormitory)));
+        }
+
+        private ObjectResult FailedDependency(string content)
+        {
+            return StatusCode(StatusCodes.Status424FailedDependency, content);
         }
     }
 }

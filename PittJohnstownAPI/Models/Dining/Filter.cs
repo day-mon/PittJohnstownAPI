@@ -21,7 +21,7 @@ namespace PittJohnstownAPI.Models.Dining
         public object RemoteFileName { get; set; }
 
         [JsonProperty("custom_icons")]
-        public List<object> CustomIcons { get; } = new List<object>();
+        public List<object> CustomIcons { get; } = new();
     }
 
 }

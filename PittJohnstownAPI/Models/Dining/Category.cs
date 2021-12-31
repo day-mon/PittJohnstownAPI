@@ -15,7 +15,7 @@ namespace PittJohnstownAPI.Models.Dining
         public int? SortOrder { get; set; }
 
         [JsonProperty("items")]
-        public List<FoodModel>? Items { get; } = new List<FoodModel>();
+        public List<FoodModel>? Items { get; } = new();
     }
 
 }

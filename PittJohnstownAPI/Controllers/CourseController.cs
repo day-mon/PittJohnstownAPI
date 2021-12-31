@@ -36,8 +36,8 @@ namespace PittJohnstownAPI.Controllers
 
             if (redirects)
             {
-                Logger.Error("Peoplesoft is down, Returning unauthorized (401)");
-                return Unauthorized("Peoplesoft is currently down, We are unable to get any data!");
+                Logger.Error("Peoplesoft is down, Returning Failed Dependancy (422)");
+                return FailedDependency("Peoplesoft is currently down, We are unable to get any data!");
             }
 
             var period = IsValidTerm(periodId);
@@ -350,6 +350,11 @@ namespace PittJohnstownAPI.Controllers
             }
         }
 
+        
+        private ObjectResult FailedDependency(string content)
+        {
+            return StatusCode(StatusCodes.Status424FailedDependency, content);
+        }
 
         private static bool IsValidTerm(int periodId)
         {
