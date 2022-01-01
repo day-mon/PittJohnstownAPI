@@ -13,8 +13,7 @@ namespace PittJohnstownAPI.Controllers
     public class DiningController : ControllerBase
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-
+        
         [HttpGet("station/{period}/{diningStation}")]
         [ProducesResponseType(typeof(string), StatusCodes.Status424FailedDependency)]
         [ProducesResponseType(typeof(string), StatusCodes.Status422UnprocessableEntity)]
@@ -116,7 +115,7 @@ namespace PittJohnstownAPI.Controllers
         }
 
         [HttpGet("period/{period}/{date}")]
-        public async Task<ActionResult<List<Category>>> GetDinningOptionOnDate(string period, string date)
+        public async Task<ActionResult<IEnumerable<Category>>> GetDiningOptionOnDate(string period, string date)
         {
             if (!DateTime.TryParse(date, out var result))
                 return UnprocessableEntity($"{date} is not parseable. Format yyyy-MM-dd");
