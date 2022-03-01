@@ -4,17 +4,17 @@ namespace PittJohnstownAPI.Models.Laundry
 {
     public class LaundryModel
     {
-        public LaundryModel(LaundryObject Item, string Location)
+        public LaundryModel(LaundryObject item, string location)
         {
-            this.type = Item.Type.ToUpper().StartsWith('D') ? "Dryer" : "Washer";
-            this.IsWorking = Item.Percentage <= 5;
-            this.ApplianceID = Item.ApplianceDesc;
-            this.IsInUse = Item.StatusToggle > 0 && IsWorking;
-            this.TimeRemaining = Item.TimeLeftLite;
-            this.Location = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(Location);
+            type = item.Type.ToUpper().StartsWith('D') ? "Dryer" : "Washer";
+            IsWorking = item.Percentage <= 5;
+            ApplianceID = item.ApplianceDesc;
+            IsInUse = item.StatusToggle > 0 && IsWorking;
+            TimeRemaining = item.TimeLeftLite;
+            this.Location = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(location);
         }
 
-        public string ApplianceID { get; set; }
+        public string? ApplianceID { get; set; }
         public string type { get; set; }
         public bool IsWorking { get; set; }
         public string TimeRemaining { get; set; }

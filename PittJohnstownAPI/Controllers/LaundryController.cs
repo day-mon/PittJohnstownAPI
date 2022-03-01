@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PittJohnstownAPI.Models.Laundry;
 
@@ -62,7 +63,11 @@ namespace PittJohnstownAPI.Controllers
             }
 
             return new ActionResult<IEnumerable<LaundryModel>>(myDeserializedClass.LaundryObjects
-                .Where(item => item.Type.ToUpper().Contains("Dry") || item.Type.Contains("washFL"))
+                .Where(item =>
+                {
+                    var aT = item.Type.ToLower();
+                    return aT.Equals("washfl") || aT.Equals("dry");
+                })
                 .Select(item => new LaundryModel(item, dormitory)));
         }
 
