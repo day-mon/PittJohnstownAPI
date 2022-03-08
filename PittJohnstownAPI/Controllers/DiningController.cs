@@ -175,11 +175,10 @@ namespace PittJohnstownAPI.Controllers
                 return new FunctionResponse("Could not deserialize response.", string.Empty, null);
 
 
-            foreach (var var in myDeserializedClass.Periods.Select(k =>
-                         k.Name?.Equals(period, StringComparison.OrdinalIgnoreCase).ToString()))
+            foreach (var var in myDeserializedClass.Periods)
             {
-                if (var != null && var.Equals(period, StringComparison.OrdinalIgnoreCase))
-                    return new FunctionResponse(string.Empty, var, null);
+                if (var != null && var.Name.Equals(period, StringComparison.OrdinalIgnoreCase))
+                    return new FunctionResponse(string.Empty, var.Id, null);
             }
 
             return new FunctionResponse("Could not find period.", string.Empty, null);

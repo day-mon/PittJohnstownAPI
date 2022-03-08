@@ -2,6 +2,7 @@
 {
     public class CourseModel
     {
+        public string Name { get; set; }
         public string Identifier { get; set; }
         public string? Session { get; set; }
         public int ClassNumber { get; set; }

@@ -64,6 +64,7 @@ namespace PittJohnstownAPI.Controllers
                 .FirstOrDefault()?
                 .InnerText ?? "";
 
+            course.Name = GetElementsByClassName(html,"primary-head")[0].InnerText.Trim();
             course.Identifier = identifier;
 
             
